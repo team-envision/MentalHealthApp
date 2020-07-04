@@ -1,8 +1,11 @@
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_swiper/flutter_swiper.dart';
 import 'package:mental_health_app/DASS21_Page.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:mental_health_app/SocioDemographic.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'Showup.dart';
 import 'questionaire.dart';
@@ -74,7 +77,10 @@ List<String> course = [
   "Medicine & Health Sciences",
   "Management",
   "Science & Humanities",
-  "College of Humanities"
+  "Dental",
+  "Law",
+  "Teacher Education and Research",
+  "Hotel and Catering Management"
 ];
 List<String> engdivision = [
   "Department of Aerospace Engineering",
@@ -84,8 +90,8 @@ List<String> engdivision = [
   "Department of Biotechnology",
   "Department of Chemical Engineering",
   "Department of Chemistry",
-  "Department of Civil Engineering"
-      "Department of Computer Science Engineering",
+  "Department of Civil Engineering",
+  "Department of Computer Science Engineering",
   "Department of Electrical and Electronics",
   "Department of Electronics & Communication",
   "Department of Electronics & Instrumentation",
@@ -105,10 +111,12 @@ List<String> engdivision = [
 List<String> meddivision = [
   "Anaesthesia",
   "Anatomy",
+  "Audiology",
   "Biochemistry",
   "Cardio Vascular & Thoracic Surgery",
   "Cardiology",
   "Community Medicine",
+  "Clinical Psychology",
   "Dermatology, Venerology and Leprosy",
   "General Medicine",
   "General Surgery",
@@ -117,17 +125,23 @@ List<String> meddivision = [
   "Nephrology",
   "Neurology",
   "Neurosurgery",
+  "Nursing",
   "Obstetrics & Gynaecology",
+  "Occupational Therapy",
   "Ophthalmology",
+  "Optometry",
   "Orthopaedics",
   "Otorhinolaryngology",
   "Paediatric Surgery",
   "Paediatrics",
   "Pathology",
   "Pharmacology",
+  "Pharmacy",
   "Physiology",
+  "Physiotherapy",
   "Plastic & Reconstructive Surgery",
   "Psychiatry",
+  "Public Health",
   "Radio Diagnosis",
   "Respiratory Medicine",
   "Urology"
@@ -139,41 +153,51 @@ List<String> mandivision = [
   "Ph.D"
 ];
 List<String> scidivision = [
+  "Department of Bharatanatyam",
   "Department of Biotechnology",
+  "Department of Career Development",
   "Department of Commerce",
   "Department of Computer Applications",
   "Department of Computer Science",
   "Department of Corporate Secretaryship and Accounting & Finance",
   "Department of Economics",
-  "Department of Journalism & Mass Communication",
-  "Department of Mathematics and Statistics",
-  "Department of Public Relations",
-  "Department of Visual Communication"
-];
-List<String> humdivision = [
-  "Department of Bharatanatyam",
-  "Department of Career Development",
   "Department of English",
   "Department of Fashion Designing",
   "Department of French",
   "Department of Hindi",
+  "Department of Journalism & Mass Communication",
+  "Department of Mathematics and Statistics",
   "Department of Music",
+  "Department of Public Relations",
   "Department of Physical Education",
   "Department of Tamil",
-  "Institute of Hotel and Catering Management",
-  "SRM School of Teacher Education and Research",
+  "Department of Visual Communication"
 ];
+List<String> dendivision = [
+  "Conservative Dentistry and Endodontics",
+  "Oral Diagnosis, Oral Medicine & Radiology",
+  "Oral and Maxillofacial Pathology",
+  "Oral and Maxillofacial Surgery",
+  "Orthodontics and Dentofacial Orthopedics",
+  "Pedodontics & Preventive Dentistry",
+  "Periodontics",
+  "Prosthodontics & Implantology",
+  "Public Health Dentistry"
+];
+List<String> defdivision = ["-"];
+
 List<bool> q1done = [false, false, false];
 List<bool> q3done = [false, false, false, false];
-List<bool> q4done = [false, false, false, false];
+List<bool> q4done = [false, false, false, false, false];
 String currentyear = "First Year";
 String currentcourse = "Engineering & Technology";
 String currentdiveng = "Department of Automobile Engineering";
 String currentdivmed = "Anaesthesia";
 String currentdivman = "BBA";
 String currentdivsci = "Department of Biotechnology";
-String currentdivhum = "Department of Bharatanatyam";
-
+String currentdivden = "Conservative Dentistry and Endodontics";
+String currentdefault = "-";
+String currentDivision = "Department of Automobile Engineering";
 int rating = 18;
 final snackBar = SnackBar(
   content: Text("Please complete the questionnaire"),
@@ -198,7 +222,7 @@ class QuizState extends State<Quiz> {
               curve: Curves.easeInOutCubic,
               scrollDirection: Axis.vertical,
               loop: false,
-              viewportFraction: 0.8,
+              viewportFraction: 0.9,
               scale: 0.2,
               controller: _controller,
               itemBuilder: (BuildContext context, int index) {
@@ -309,7 +333,7 @@ class QuizState extends State<Quiz> {
                               child: ListTile(
                                 leading: Icon(Icons.keyboard_arrow_right,
                                     color: Colors.white),
-                                trailing: q1done[0]
+                                trailing: q1done[2]
                                     ? Icon(
                                         Icons.spellcheck,
                                         color: Colors.white,
@@ -411,6 +435,7 @@ class QuizState extends State<Quiz> {
                                 onChanged: (String newValueSelected) {
                                   setState(() {
                                     currentyear = newValueSelected;
+                                    print(currentyear);
                                   });
                                 }),
                           ),
@@ -441,7 +466,7 @@ class QuizState extends State<Quiz> {
                                       value: dropdownstringitem0,
                                       child: Text(dropdownstringitem0,
                                           style: TextStyle(
-                                              fontSize: ScreenUtil().setSp(50,
+                                              fontSize: ScreenUtil().setSp(40,
                                                   allowFontScalingSelf: true),
                                               color: Colors.white)),
                                     );
@@ -477,7 +502,8 @@ class QuizState extends State<Quiz> {
                                   iconSize: 30,
                                   isExpanded: true,
                                   elevation: 10,
-                                  value: currentcourse == "Engineering & Technology"
+                                  value: currentcourse ==
+                                          "Engineering & Technology"
                                       ? currentdiveng
                                       : currentcourse ==
                                               "Medicine & Health Sciences"
@@ -487,7 +513,9 @@ class QuizState extends State<Quiz> {
                                               : currentcourse ==
                                                       "Science & Humanities"
                                                   ? currentdivsci
-                                                  : currentdivhum,
+                                                  : currentcourse == "Dental"
+                                                      ? currentdivden
+                                                      : currentdefault,
                                   items: currentcourse ==
                                           "Engineering & Technology"
                                       ? engdivision
@@ -497,7 +525,7 @@ class QuizState extends State<Quiz> {
                                             child: Text(dropdownstringitem0,
                                                 style: TextStyle(
                                                     fontSize: ScreenUtil().setSp(
-                                                        50,
+                                                        40,
                                                         allowFontScalingSelf:
                                                             true),
                                                     color: Colors.white)),
@@ -512,7 +540,7 @@ class QuizState extends State<Quiz> {
                                                 child: Text(dropdownstringitem0,
                                                     style: TextStyle(
                                                         fontSize: ScreenUtil()
-                                                            .setSp(50,
+                                                            .setSp(40,
                                                                 allowFontScalingSelf:
                                                                     true),
                                                         color: Colors.white)),
@@ -528,7 +556,7 @@ class QuizState extends State<Quiz> {
                                                         dropdownstringitem0,
                                                         style: TextStyle(
                                                             fontSize: ScreenUtil()
-                                                                .setSp(50,
+                                                                .setSp(40,
                                                                     allowFontScalingSelf:
                                                                         true),
                                                             color:
@@ -547,66 +575,105 @@ class QuizState extends State<Quiz> {
                                                             dropdownstringitem0,
                                                             style: TextStyle(
                                                                 fontSize: ScreenUtil()
-                                                                    .setSp(50,
+                                                                    .setSp(40,
                                                                         allowFontScalingSelf:
                                                                             true),
                                                                 color: Colors
                                                                     .white)),
                                                       );
                                                     }).toList()
-                                                  : humdivision.map((String
-                                                      dropdownstringitem0) {
-                                                      return DropdownMenuItem<
-                                                          String>(
-                                                        value:
-                                                            dropdownstringitem0,
-                                                        child: Text(
-                                                            dropdownstringitem0,
-                                                            style: TextStyle(
-                                                                fontSize: ScreenUtil()
-                                                                    .setSp(50,
+                                                  : currentcourse == "Dental"
+                                                      ? dendivision.map((String
+                                                          dropdownstringitem0) {
+                                                          return DropdownMenuItem<
+                                                              String>(
+                                                            value:
+                                                                dropdownstringitem0,
+                                                            child: Text(
+                                                                dropdownstringitem0,
+                                                                style: TextStyle(
+                                                                    fontSize: ScreenUtil().setSp(
+                                                                        40,
                                                                         allowFontScalingSelf:
                                                                             true),
-                                                                color: Colors
-                                                                    .white)),
-                                                      );
-                                                    }).toList(),
-                                  onChanged: currentcourse ==
-                                          "Engineering & Technology"
+                                                                    color: Colors
+                                                                        .white)),
+                                                          );
+                                                        }).toList()
+                                                      : defdivision.map(
+                                                          (String dropdownstringitem0) {
+                                                          return DropdownMenuItem<
+                                                              String>(
+                                                            value:
+                                                                dropdownstringitem0,
+                                                            child: Text(
+                                                                dropdownstringitem0,
+                                                                style: TextStyle(
+                                                                    fontSize: ScreenUtil().setSp(
+                                                                        40,
+                                                                        allowFontScalingSelf:
+                                                                            true),
+                                                                    color: Colors
+                                                                        .white)),
+                                                          );
+                                                        }).toList(),
+                                  onChanged: currentcourse == "Engineering & Technology"
                                       ? (String newValueSelected) {
                                           setState(() {
                                             currentdiveng = newValueSelected;
+                                            currentDivision = newValueSelected;
                                           });
+                                          _controller.next();
                                         }
-                                      : currentcourse ==
-                                              "Medicine & Health Sciences"
+                                      : currentcourse == "Medicine & Health Sciences"
                                           ? (String newValueSelected) {
                                               setState(() {
                                                 currentdivmed =
                                                     newValueSelected;
+                                                currentDivision =
+                                                    newValueSelected;
                                               });
+                                              _controller.next();
                                             }
                                           : currentcourse == "Management"
                                               ? (String newValueSelected) {
                                                   setState(() {
                                                     currentdivman =
                                                         newValueSelected;
+                                                    currentDivision =
+                                                        newValueSelected;
                                                   });
+                                                  _controller.next();
                                                 }
-                                              : currentcourse ==
-                                                      "Science & Humanities"
+                                              : currentcourse == "Science & Humanities"
                                                   ? (String newValueSelected) {
                                                       setState(() {
                                                         currentdivsci =
                                                             newValueSelected;
-                                                      });
-                                                    }
-                                                  : (String newValueSelected) {
-                                                      setState(() {
-                                                        currentdivhum =
+                                                        currentDivision =
                                                             newValueSelected;
                                                       });
-                                                    }),
+                                                      _controller.next();
+                                                    }
+                                                  : currentcourse == "Dental"
+                                                      ? (String newValueSelected) {
+                                                          setState(() {
+                                                            currentdivden =
+                                                                newValueSelected;
+                                                            currentDivision =
+                                                                newValueSelected;
+                                                          });
+                                                          _controller.next();
+                                                        }
+                                                      : (String newValueSelected) {
+                                                          setState(() {
+                                                            currentdefault =
+                                                                newValueSelected;
+                                                            currentDivision =
+                                                                newValueSelected;
+                                                          });
+                                                          _controller.next();
+                                                        }),
                             ),
                           ),
                           visible: currentyear == "Faculty" ||
@@ -627,7 +694,7 @@ class QuizState extends State<Quiz> {
                           height: 400.h,
                         ),
                         Text(
-                          "\nDo you have any physical illness?\nIf yes, have you consulted a",
+                          "\nDo you have any physical illness?\n",
                           textAlign: TextAlign.center,
                           style: TextStyle(
                               fontSize: ScreenUtil()
@@ -822,13 +889,14 @@ class QuizState extends State<Quiz> {
                         Padding(
                           padding: EdgeInsets.only(top: 20.h),
                           child: InkWell(
-                            onTap: () {
+                            onTap: () async {
                               setState(() {
-                                answers[2] = "Psychiatrist";
+                                answers[2] = "Faith Healer";
                                 q4done[0] = true;
                                 q4done[1] = false;
                                 q4done[2] = false;
                                 q4done[3] = false;
+                                q4done[4] = false;
                               });
                               if (answers[0] == "none" ||
                                   answers[1] == "none" ||
@@ -836,11 +904,13 @@ class QuizState extends State<Quiz> {
                                   rating == null)
                                 Scaffold.of(context).showSnackBar(snackBar);
                               else {
-                                _getanswers();
+                                getAnswers();
+                                await _pushToFirebase();
+
                                 Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                        builder: (context) => Dass21Page()));
+                                        builder: (context) => SocioDemo()));
                               }
                             },
                             child: Card(
@@ -856,54 +926,7 @@ class QuizState extends State<Quiz> {
                                       )
                                     : null,
                                 title: Text(
-                                  'Psychiatrist',
-                                  style: TextStyle(
-                                      fontSize: ScreenUtil().setSp(60,
-                                          allowFontScalingSelf: true),
-                                      color: Colors.white),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        Padding(
-                          padding: EdgeInsets.only(top: 20.h),
-                          child: InkWell(
-                            onTap: () {
-                              setState(() {
-                                answers[2] = "Psychologist";
-                                q4done[0] = false;
-                                q4done[1] = true;
-                                q4done[2] = false;
-                                q4done[3] = false;
-                              });
-                              if (answers[0] == "none" ||
-                                  answers[1] == "none" ||
-                                  answers[2] == "none" ||
-                                  rating == null)
-                                Scaffold.of(context).showSnackBar(snackBar);
-                              else {
-                                _getanswers();
-                                Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) => Dass21Page()));
-                              }
-                            },
-                            child: Card(
-                              elevation: 8,
-                              color: Colors.blue,
-                              child: ListTile(
-                                leading: Icon(Icons.keyboard_arrow_right,
-                                    color: Colors.white),
-                                trailing: q4done[1]
-                                    ? Icon(
-                                        Icons.spellcheck,
-                                        color: Colors.white,
-                                      )
-                                    : null,
-                                title: Text(
-                                  'Psychologist',
+                                  'Faith Healer',
                                   style: TextStyle(
                                       fontSize: ScreenUtil().setSp(60,
                                           allowFontScalingSelf: true),
@@ -920,9 +943,10 @@ class QuizState extends State<Quiz> {
                               setState(() {
                                 answers[2] = "Counsellor";
                                 q4done[0] = false;
-                                q4done[1] = false;
-                                q4done[2] = true;
+                                q4done[1] = true;
+                                q4done[2] = false;
                                 q4done[3] = false;
+                                q4done[4] = false;
                               });
                               if (answers[0] == "none" ||
                                   answers[1] == "none" ||
@@ -930,20 +954,20 @@ class QuizState extends State<Quiz> {
                                   rating == null)
                                 Scaffold.of(context).showSnackBar(snackBar);
                               else {
-                                _getanswers();
+                                _pushToFirebase();
                                 Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                        builder: (context) => Dass21Page()));
+                                        builder: (context) => SocioDemo()));
                               }
                             },
                             child: Card(
                               elevation: 8,
-                              color: Colors.blue[600],
+                              color: Colors.blue,
                               child: ListTile(
                                 leading: Icon(Icons.keyboard_arrow_right,
                                     color: Colors.white),
-                                trailing: q4done[2]
+                                trailing: q4done[1]
                                     ? Icon(
                                         Icons.spellcheck,
                                         color: Colors.white,
@@ -965,11 +989,12 @@ class QuizState extends State<Quiz> {
                           child: InkWell(
                             onTap: () {
                               setState(() {
-                                answers[2] = "None";
+                                answers[2] = "Psychologist";
                                 q4done[0] = false;
                                 q4done[1] = false;
-                                q4done[2] = false;
-                                q4done[3] = true;
+                                q4done[2] = true;
+                                q4done[3] = false;
+                                q4done[4] = false;
                               });
                               if (answers[0] == "none" ||
                                   answers[1] == "none" ||
@@ -977,11 +1002,59 @@ class QuizState extends State<Quiz> {
                                   rating == null)
                                 Scaffold.of(context).showSnackBar(snackBar);
                               else {
-                                _getanswers();
+                                _pushToFirebase();
                                 Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                        builder: (context) => Dass21Page()));
+                                        builder: (context) => SocioDemo()));
+                              }
+                            },
+                            child: Card(
+                              elevation: 8,
+                              color: Colors.blue[600],
+                              child: ListTile(
+                                leading: Icon(Icons.keyboard_arrow_right,
+                                    color: Colors.white),
+                                trailing: q4done[2]
+                                    ? Icon(
+                                        Icons.spellcheck,
+                                        color: Colors.white,
+                                      )
+                                    : null,
+                                title: Text(
+                                  'Psychologist',
+                                  style: TextStyle(
+                                      fontSize: ScreenUtil().setSp(60,
+                                          allowFontScalingSelf: true),
+                                      color: Colors.white),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.only(top: 20.h),
+                          child: InkWell(
+                            onTap: () {
+                              setState(() {
+                                answers[2] = "Psychiatrist";
+                                q4done[0] = false;
+                                q4done[1] = false;
+                                q4done[2] = false;
+                                q4done[3] = true;
+                                q4done[4] = false;
+                              });
+                              if (answers[0] == "none" ||
+                                  answers[1] == "none" ||
+                                  answers[2] == "none" ||
+                                  rating == null)
+                                Scaffold.of(context).showSnackBar(snackBar);
+                              else {
+                                _pushToFirebase();
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => SocioDemo()));
                               }
                             },
                             child: Card(
@@ -991,6 +1064,54 @@ class QuizState extends State<Quiz> {
                                 leading: Icon(Icons.keyboard_arrow_right,
                                     color: Colors.white),
                                 trailing: q4done[3]
+                                    ? Icon(
+                                        Icons.spellcheck,
+                                        color: Colors.white,
+                                      )
+                                    : null,
+                                title: Text(
+                                  'Psychiatrist',
+                                  style: TextStyle(
+                                      fontSize: ScreenUtil().setSp(60,
+                                          allowFontScalingSelf: true),
+                                      color: Colors.white),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.only(top: 20.h),
+                          child: InkWell(
+                            onTap: () {
+                              setState(() {
+                                answers[2] = "None";
+                                q4done[0] = false;
+                                q4done[1] = false;
+                                q4done[2] = false;
+                                q4done[3] = false;
+                                q4done[4] = true;
+                              });
+                              if (answers[0] == "none" ||
+                                  answers[1] == "none" ||
+                                  answers[2] == "none" ||
+                                  rating == null)
+                                Scaffold.of(context).showSnackBar(snackBar);
+                              else {
+                                _pushToFirebase();
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) => SocioDemo()));
+                              }
+                            },
+                            child: Card(
+                              elevation: 8,
+                              color: Colors.blue[700],
+                              child: ListTile(
+                                leading: Icon(Icons.keyboard_arrow_right,
+                                    color: Colors.white),
+                                trailing: q4done[4]
                                     ? Icon(
                                         Icons.spellcheck,
                                         color: Colors.white,
@@ -1023,11 +1144,54 @@ class QuizState extends State<Quiz> {
   }
 }
 
-void _getanswers() {
-  print(answers[0]);
-  print(rating);
-  print(currentyear);
-  print(currentcourse);
-  print(answers[1]);
-  print(answers[2]);
+void getAnswers() {
+  print("answers[0]=${answers[0]}");
+  print("rating=$rating");
+  print("currentyear=$currentyear");
+  print("currentcourse=$currentcourse");
+  print("answers[1]=${answers[1]}");
+  print("answers[2]=${answers[2]}");
+  final Map<String, String> someMap = {};
+
+  someMap["Q10"] = DateTime.now().toString();
+  someMap["Q11"] = answers[0];
+  someMap["Q12"] = rating.toString();
+  someMap["Q13"] = currentyear;
+  someMap["Q14"] = answers[1];
+  someMap["Q15"] = answers[2];
+
+  someMap.forEach((key, value) {
+    print(key + "=>" + value);
+  });
+}
+
+Future _pushToFirebase() async {
+  print("answers[0]=${answers[0]}");
+  print("rating=$rating");
+  print("currentyear=$currentyear");
+  print("currentcourse=$currentcourse");
+  print("answers[1]=${answers[1]}");
+  print("answers[2]=${answers[2]}");
+  final Map<String, String> someMap = {};
+  print('map for demographic created');
+
+  someMap["Q10"] = DateTime.now().toString();
+  someMap["Q11"] = answers[0]; //gender
+  someMap["Q12"] = rating.toString();
+
+  ///age
+  someMap["Q13"] = currentyear; //year of study
+  someMap["Q14"] = currentcourse; //Engg, BBA,Pharma etc.
+  someMap["Q15"] = currentDivision; //CSE,SWE and all
+  someMap["Q16"] = answers[1]; //has conducted if physical illness
+  someMap["Q17"] = answers[2]; //has consulted a
+  print('done');
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  String pushId = prefs.getString('key');
+  FirebaseDatabase.instance
+      .reference()
+      .child("Responses")
+      .child(pushId)
+      .child("demographic")
+      .set(someMap);
 }

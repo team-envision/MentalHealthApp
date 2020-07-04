@@ -1,6 +1,7 @@
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_swiper/flutter_swiper.dart';
 import 'package:mental_health_app/SDRS_Page.dart';
+import 'package:mental_health_app/TimerPage.dart';
 import 'package:mental_health_app/question.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -364,9 +365,10 @@ int count = 0;
 Future pushToFirebase() async {
     final Map<String, String> someMap = {};
     print('map for BACE created');
-
+    
+    someMap["Q10"] = DateTime.now().toString();
     for (int i = 0; i < 27; i++) {
-      someMap["Q${i + 10}"] = BACE_Questions[i].answer;
+      someMap["Q${i + 10+1}"] = BACE_Questions[i].answer;
       print(BACE_Questions[i].answer);
     }
     print('done');
@@ -381,58 +383,62 @@ Future pushToFirebase() async {
   }
   Widget summary(BuildContext context) {
     return Center(
-      child: Column(
-        children: <Widget>[
-          SizedBox(
-            height: 250.h,
-          ),
-          Container(
-              child: Image(
-            image: AssetImage('assets/checklist.png'),
-            height: 400.h,
-          )),
-          InkWell(
-            onTap: () async{
-              setState(() {
-                count = 0;
-                for (int i = 0; i < 27; i++) {
-                  if (isselected[i][0] == true ||
-                      isselected[i][1] == true ||
-                      isselected[i][2] == true ||
-                      isselected[i][3] == true) {
-                    count += 1;
+      child: Container(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Container(
+                child: Image(
+              image: AssetImage('assets/checklist.png'),
+              height: 400.h,
+            )),
+            InkWell(
+              onTap: () async{
+                setState(() {
+                  count = 0;
+                  for (int i = 0; i < 27; i++) {
+                    if (isselected[i][0] == true ||
+                        isselected[i][1] == true ||
+                        isselected[i][2] == true ||
+                        isselected[i][3] == true) {
+                      count += 1;
+                    }
                   }
+                });
+                if(count == 27)
+                {
+                  await pushToFirebase();
+                  SharedPreferences prefs = await SharedPreferences.getInstance();
+                  String dummy = prefs.get('currentPage');
+                  int cp = int.parse(dummy);
+                  prefs.setString('currentPage', (cp+1).toString());
+                  Navigator.pushReplacement(context,
+                    MaterialPageRoute(builder: (context) => TimerPage("SDRS",false)));
                 }
-              });
-              if(count == 27)
-              {
-                await pushToFirebase();
-                Navigator.pushReplacement(context,
-                  MaterialPageRoute(builder: (context) => SDRSPage()));
-              }
-              else
-              {
-                final snackBar = SnackBar(
-                  content: Text("Please complete the questionnaire"),
-                  duration: Duration(milliseconds: 800),
-                );
-                Scaffold.of(context).showSnackBar(snackBar);
-              }
-              
-            },
-            child: Card(
-          elevation: 8,
-          color: Colors.teal[400],
-          child: ListTile(
-            leading: Icon(Icons.keyboard_arrow_right, color: Colors.white),
-            title: Text(
-              "Proceed",
-              style: TextStyle(fontSize: 16, color: Colors.white),
+                else
+                {
+                  final snackBar = SnackBar(
+                    content: Text("Please complete the questionnaire"),
+                    duration: Duration(milliseconds: 800),
+                  );
+                  Scaffold.of(context).showSnackBar(snackBar);
+                }
+                
+              },
+              child: Card(
+            elevation: 8,
+            color: Colors.teal[400],
+            child: ListTile(
+              leading: Icon(Icons.keyboard_arrow_right, color: Colors.white),
+              title: Text(
+                "Proceed",
+                style: TextStyle(fontSize: 16, color: Colors.white),
+              ),
             ),
           ),
+            )
+          ],
         ),
-          )
-        ],
       ),
     );
   }

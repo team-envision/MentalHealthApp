@@ -4,6 +4,7 @@ import 'package:flutter_swiper/flutter_swiper.dart';
 import 'package:mental_health_app/GAD7_Page.dart';
 import 'package:mental_health_app/ResultPage.dart';
 import 'package:mental_health_app/PHQ9_Page.dart';
+import 'package:mental_health_app/TimerPage.dart';
 import 'package:mental_health_app/question.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:step_progress_indicator/step_progress_indicator.dart';
@@ -25,11 +26,11 @@ class _SDRSPageState extends State<SDRSPage> {
   List<Color> randomizecolorlight = [Colors.blue[100],Colors.green[100],Colors.red[100],Colors.purple[100],Colors.pink[100],Colors.orange[100]];
 
   List<List<bool>> isselected = new List.generate(27, (j) => [false,false,false,false,false]);
-  List<String> questions = ["I am always courteous even to people who are disagreeable.",
-                            "There have been occasions when I took advantage of someone.",
-                            "I sometimes try to get even rather than forgive and forget.",
+  List<String> questions = ["I am always courteous even to people who are disagreeable",
+                            "There have been occasions when I took advantage of someone",
+                            "I sometimes try to get even rather than forgive and forget",
                             "I sometimes feel resentful when I don’t get my way",
-                            "No matter who I’m talking to, I’m always a good listener."];
+                            "No matter who I’m talking to, I’m always a good listener"];
 
   List<int> qtype = [1,2,3];
   bool isSevere = false;
@@ -311,8 +312,9 @@ Future pushToFirebase() async {
     final Map<String, String> someMap = {};
     print('map for SDRS created');
 
+    someMap["Q10"] = DateTime.now().toString();
     for (int i = 0; i < 5; i++) {
-      someMap["Q${i + 10}"] = SDRS_Questions[i].answer;
+      someMap["Q${i + 10+1}"] = SDRS_Questions[i].answer;
       print(SDRS_Questions[i].answer);
     }
     print('done');
@@ -329,59 +331,63 @@ Future pushToFirebase() async {
   Widget summary(BuildContext context){
     _calcResult();
     return Center(
-      child: Column(
-        children: <Widget>[
-          SizedBox(
-            height: 250.h,
-          ),
-          Container(
-              child: Image(
-            image: AssetImage('assets/checklist.png'),
-            height: 400.h,
-          )),
-          InkWell(
-            onTap: ()async {
-              setState(() {
-                count = 0;
-                for (int i = 0; i < 5; i++) {
-                  if (isselected[i][0] == true ||
-                      isselected[i][1] == true ||
-                      isselected[i][2] == true ||
-                      isselected[i][3] == true ||
-                      isselected[i][4] == true
-                      ) {
-                    count += 1;
+      child: Container(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            Container(
+                child: Image(
+              image: AssetImage('assets/checklist.png'),
+              height: 400.h,
+            )),
+            InkWell(
+              onTap: ()async {
+                setState(() {
+                  count = 0;
+                  for (int i = 0; i < 5; i++) {
+                    if (isselected[i][0] == true ||
+                        isselected[i][1] == true ||
+                        isselected[i][2] == true ||
+                        isselected[i][3] == true ||
+                        isselected[i][4] == true
+                        ) {
+                      count += 1;
+                    }
                   }
+                });
+                if(count == 5)
+                {
+                  await pushToFirebase();
+                  SharedPreferences prefs = await SharedPreferences.getInstance();
+                  String dummy = prefs.get('currentPage');
+                  int cp = int.parse(dummy);
+                  prefs.setString('currentPage', (cp+1).toString());
+                  Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => TimerPage("Result",false)));//Done
                 }
-              });
-              if(count == 5)
-              {
-                await pushToFirebase();
-                  Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => ResultPage()));//Done
-              }
-              else
-              {
-                final snackBar = SnackBar(
-                  content: Text("Please complete the questionnaire"),
-                  duration: Duration(milliseconds: 800),
-                );
-                Scaffold.of(context).showSnackBar(snackBar);
-              }
-              
-            },
-            child: Card(
-          elevation: 8,
-          color: Colors.teal[400],
-          child: ListTile(
-            leading: Icon(Icons.keyboard_arrow_right, color: Colors.white),
-            title: Text(
-              "Done",
-              style: TextStyle(fontSize: 16, color: Colors.white),
+                else
+                {
+                  final snackBar = SnackBar(
+                    content: Text("Please complete the questionnaire"),
+                    duration: Duration(milliseconds: 800),
+                  );
+                  Scaffold.of(context).showSnackBar(snackBar);
+                }
+                
+              },
+              child: Card(
+            elevation: 8,
+            color: Colors.teal[400],
+            child: ListTile(
+              leading: Icon(Icons.keyboard_arrow_right, color: Colors.white),
+              title: Text(
+                "Done",
+                style: TextStyle(fontSize: 16, color: Colors.white),
+              ),
             ),
           ),
+            )
+          ],
         ),
-          )
-        ],
       ),
     );
   }
